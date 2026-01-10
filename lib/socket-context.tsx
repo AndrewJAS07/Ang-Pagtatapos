@@ -41,9 +41,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         setIsConnected(false);
       });
 
-      socketInstance.on('connect_error', (err: Error) => {
-        console.error('Socket connection error:', err);
-        setError(err.message);
+      socketInstance.on('connect_error', (err: Error & { message?: string; code?: string }) => {
+        // Log richer details to help debugging (message, code, stack)
+        console.error('Socket connection error:', {
+          message: err && err.message ? err.message : String(err),
+          code: (err as any)?.code,
+          stack: (err as any)?.stack,
+        });
+        setError(err?.message ?? String(err));
         setIsConnected(false);
       });
 
