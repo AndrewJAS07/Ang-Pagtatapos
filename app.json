@@ -15,7 +15,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "icon": "./assets/images/favicon.png",
+    "icon": "./assets/images/EyytrikeLogo2.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.eyytrike",
@@ -28,7 +28,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0B4619",
-        "foregroundImage": "./assets/images/favicon.png"
+        "foregroundImage": "./assets/images/EyytrikeLogo2.png"
       },
       "package": "com.anonymous.eyytrike",
       "permissions": [
@@ -45,7 +45,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/EyytrikeLogo2.png"
     },
     "plugins": [
       [
@@ -65,12 +65,12 @@
       "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY",
       "fallbackUrls": [
         "https://eyyback.vercel.app",
-        "http://192.168.1.6:3000",
         "http://127.0.0.1:3000"
       ],
       "mongodbUri": "mongodb://localhost:27017/eyytrike",
       "jwtSecret": "your-super-secret-jwt-key-here",
       "router": {},
+
       "eas": {
         "projectId": "8a2ee4c3-48a6-4251-8db7-5e1e98e36726"
       }

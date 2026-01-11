@@ -3,11 +3,11 @@ import Constants from 'expo-constants';
 // Environment configuration
 export const config = {
   // API Configuration
-  API_URL: process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.6:3000',
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.6:3000',
+  API_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://eyyback.vercel.app',
+  API_BASE_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_BASE_URL || 'https://eyyback.vercel.app',
   
   // Socket.IO Configuration
-  SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://192.168.1.6:3000',
+  SOCKET_URL: (Constants as any).expoConfig?.extra?.socketUrl || process.env.EXPO_PUBLIC_SOCKET_URL || 'https://eyyback.vercel.app',
   
   // Google Maps Configuration
   // Do not hardcode keys in client; use env or expo extras
@@ -17,8 +17,8 @@ export const config = {
   
   // Fallback URLs for different network configurations
   FALLBACK_URLS: [
-    'http://192.168.1.9:3000',
-    'http://192.168.1.6:3000',
+    'https://eyyback.vercel.app',
+    // Keep localhost as a development fallback if needed
     'http://127.0.0.1:3000'
   ],
   
@@ -41,5 +41,10 @@ export const getGoogleMapsApiKey = (): string => {
   const envKey = (typeof process !== 'undefined' && process.env && (process.env.EXPO_PUBLIC_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY)) || '';
   return envKey || (Constants as any).expoConfig?.extra?.googleMapsApiKey || 'YOUR_GOOGLE_MAPS_API_KEY';
 };
+
+// Debug: log resolved endpoints at app startup (guarded to avoid leaking info in production)
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  console.log('[config] Resolved API/SOCKET URLs:', { API_URL: getApiUrl(), SOCKET_URL: getSocketUrl() });
+}
 
 export default config;

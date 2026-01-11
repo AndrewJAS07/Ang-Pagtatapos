@@ -19,19 +19,43 @@ export default function LoginRiderScreen() {
 
     setIsLoading(true);
     try {
+      console.log('[loginrider] start', { email });
       const response = await authAPI.login(email, password);
+      console.log('[loginrider] response', response);
       
-      // Store the token and user data
-      await AsyncStorage.setItem('token', response.token);
-      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      // Store the token and user data with guards
+      try {
+        if (response?.token) {
+          await AsyncStorage.setItem('token', response.token);
+        }
+      } catch (e) {
+        console.error('[loginrider] token set failed', e);
+        Alert.alert('Storage Error', 'Failed to store token. ' + (e?.message || e));
+      }
+      try {
+        if (response?.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        }
+      } catch (e) {
+        console.error('[loginrider] user set failed', e);
+        Alert.alert('Storage Error', 'Failed to store user data. ' + (e?.message || e));
+      }
       
+      // Debug marker
+      Alert.alert('Debug', 'Login succeeded. Navigating...');
       // Navigate based on user role
-      if (response.user.role === 'driver') {
-        router.replace('/(driver)/dashboardrider');
+      if (response.user?.role === 'driver') {
+        try {
+          router.replace('/(driver)/dashboardrider');
+        } catch (e) {
+          console.error('[loginrider] navigation failed', e);
+          Alert.alert('Navigation Error', String(e));
+        }
       } else {
         Alert.alert('Error', 'This login is for drivers only');
       }
     } catch (error) {
+      console.error('[loginrider] login failed', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to login. Please try again.');
     } finally {
       setIsLoading(false);

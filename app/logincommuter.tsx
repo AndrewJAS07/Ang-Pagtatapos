@@ -19,19 +19,43 @@ export default function LoginCommuter() {
 
     setIsLoading(true);
     try {
+      console.log('[logincommuter] start', { email });
       const response = await authAPI.login(email, password);
+      console.log('[logincommuter] response', response);
       
-      // Store the token and user data
-      await AsyncStorage.setItem('token', response.token);
-      await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      // Store the token and user data with guards
+      try {
+        if (response?.token) {
+          await AsyncStorage.setItem('token', response.token);
+        }
+      } catch (e) {
+        console.error('[logincommuter] token set failed', e);
+        Alert.alert('Storage Error', 'Failed to store token. ' + (e?.message || e));
+      }
+      try {
+        if (response?.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        }
+      } catch (e) {
+        console.error('[logincommuter] user set failed', e);
+        Alert.alert('Storage Error', 'Failed to store user data. ' + (e?.message || e));
+      }
       
+      // Debug marker
+      Alert.alert('Debug', 'Login succeeded. Navigating...');
       // Navigate based on user role
-      if (response.user.role === 'commuter') {
-        router.replace('/(commuter)/dashboardcommuter');
+      if (response.user?.role === 'commuter') {
+        try {
+          router.replace('/(commuter)/dashboardcommuter');
+        } catch (e) {
+          console.error('[logincommuter] navigation failed', e);
+          Alert.alert('Navigation Error', String(e));
+        }
       } else {
         Alert.alert('Error', 'This login is for commuters only');
       }
     } catch (error) {
+      console.error('[logincommuter] login failed', error);
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to login. Please try again.');
     } finally {
       setIsLoading(false);

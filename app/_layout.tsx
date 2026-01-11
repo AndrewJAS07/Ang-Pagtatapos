@@ -41,6 +41,42 @@ function RootLayout() {
     })();
   }, []);
 
+  // Global JS error handler - captures uncaught JS errors and saves for inspection
+  React.useEffect(() => {
+    try {
+      const prevHandler = (global as any).ErrorUtils && (global as any).ErrorUtils.getGlobalHandler && (global as any).ErrorUtils.getGlobalHandler();
+      const handler = (error: any, isFatal?: boolean) => {
+        try {
+          const payload = { message: error?.message, stack: error?.stack, isFatal: !!isFatal, time: new Date().toISOString() };
+          AsyncStorage.setItem('last_js_error', JSON.stringify(payload));
+          console.error('[GlobalErrorHandler]', payload);
+        } catch (e) {
+          console.error('[GlobalErrorHandler] failed to persist', e);
+        }
+        if (typeof prevHandler === 'function') {
+          try { prevHandler(error, isFatal); } catch(e) { console.error('prevHandler error', e); }
+        }
+      };
+      if ((global as any).ErrorUtils && (global as any).ErrorUtils.setGlobalHandler) {
+        (global as any).ErrorUtils.setGlobalHandler(handler);
+      }
+
+      (async () => {
+        const last = await AsyncStorage.getItem('last_js_error');
+        if (last) {
+          console.warn('[Recovered last_js_error]', last);
+          // leave it in storage for now so you can retrieve it via logs or UI
+        }
+      })();
+
+      return () => {
+        if ((global as any).ErrorUtils && (global as any).ErrorUtils.setGlobalHandler) {
+          try { (global as any).ErrorUtils.setGlobalHandler(prevHandler); } catch {}
+        }
+      };
+    } catch (e) { console.error('Failed to set global error handler', e); }
+  }, []);
+
   return (
     <AuthProvider>
       <SocketProvider>
