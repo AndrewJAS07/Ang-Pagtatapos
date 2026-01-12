@@ -30,7 +30,8 @@ export default function LoginCommuter() {
         }
       } catch (e) {
         console.error('[logincommuter] token set failed', e);
-        Alert.alert('Storage Error', 'Failed to store token. ' + (e?.message || e));
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        Alert.alert('Storage Error', 'Failed to store token. ' + errorMessage);
       }
       try {
         if (response?.user) {
@@ -38,7 +39,8 @@ export default function LoginCommuter() {
         }
       } catch (e) {
         console.error('[logincommuter] user set failed', e);
-        Alert.alert('Storage Error', 'Failed to store user data. ' + (e?.message || e));
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        Alert.alert('Storage Error', 'Failed to store user data. ' + errorMessage);
       }
       
       // Debug marker

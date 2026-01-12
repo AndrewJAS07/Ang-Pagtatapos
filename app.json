@@ -7,6 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "eyytrike",
+    "owner": "Hypoxic",
     "splash": {
       "resizeMode": "contain",
       "image": "./assets/images/EyytrikeLogo2.png",
@@ -35,8 +36,13 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.FOREGROUND_SERVICE"
       ],
       "config": {
         "googleMaps": {

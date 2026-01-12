@@ -30,7 +30,7 @@ export default function LoginRiderScreen() {
         }
       } catch (e) {
         console.error('[loginrider] token set failed', e);
-        Alert.alert('Storage Error', 'Failed to store token. ' + (e?.message || e));
+        Alert.alert('Storage Error', 'Failed to store token. ' + (e instanceof Error ? e.message : String(e)));
       }
       try {
         if (response?.user) {
@@ -38,7 +38,7 @@ export default function LoginRiderScreen() {
         }
       } catch (e) {
         console.error('[loginrider] user set failed', e);
-        Alert.alert('Storage Error', 'Failed to store user data. ' + (e?.message || e));
+        Alert.alert('Storage Error', 'Failed to store user data. ' + (e instanceof Error ? e.message : String(e)));
       }
       
       // Debug marker
