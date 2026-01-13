@@ -146,7 +146,7 @@ export default function CommuterSignUpScreen() {
         <View style={styles.headerContainer}>
           {/* Title */}
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Let's</Text>
+            <Text style={styles.title}>{"Let\u2019s"}</Text>
             <Text style={styles.titleBold}>Create</Text>
             <Text style={styles.titleBold}>Your</Text>
             <Text style={styles.titleBold}>Account</Text>

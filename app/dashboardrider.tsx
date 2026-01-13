@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, SafeAreaView, Platform, StatusBar, Image, Touch
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 
-export default function dashboardRider() {
+export default function DashboardRider() {
   const [isAvailable, setIsAvailable] = useState(false);
 
   const toggleAvailability = () => {

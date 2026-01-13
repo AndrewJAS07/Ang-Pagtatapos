@@ -46,7 +46,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY"
+          "apiKey": "AIzaSyCv62Aspv5ayOJuzYl4MqhQxjy_ddqb2oc"
         }
       }
     },
@@ -65,21 +65,23 @@
       "expo-web-browser"
     ],
     "extra": {
-      "serverUrl": "https://eyyback.vercel.app",
-      "apiUrl": "https://eyyback.vercel.app/api",
-      "socketUrl": "https://eyyback.vercel.app",
-      "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY",
+      "serverUrl": "https://eyyback.onrender.com",
+      "apiUrl": "https://eyyback.onrender.com/api",
+      "socketUrl": "https://eyyback.onrender.com",
+      "googleMapsApiKey": "AIzaSyCv62Aspv5ayOJuzYl4MqhQxjy_ddqb2oc",
       "fallbackUrls": [
-        "https://eyyback.vercel.app",
+        "https://eyyback.onrender.com",
+        "http://127.0.0.1:3000",
+        "https://eyyback.onrender.com",
         "http://127.0.0.1:3000"
       ],
       "mongodbUri": "mongodb://localhost:27017/eyytrike",
       "jwtSecret": "your-super-secret-jwt-key-here",
       "router": {},
-
       "eas": {
-        "projectId": "8a2ee4c3-48a6-4251-8db7-5e1e98e36726"
+        "projectId": "a84e22fa-36e0-48f6-9bf9-b0f818245081"
       }
-    }
+    },
+    "owner": "andrewkhuletz07"
   }
 }

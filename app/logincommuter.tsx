@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { authAPI } from '../lib/api';
+import { useAuth } from '../lib/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginCommuter() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,46 +20,29 @@ export default function LoginCommuter() {
 
     setIsLoading(true);
     try {
-      console.log('[logincommuter] start', { email });
-      const response = await authAPI.login(email, password);
-      console.log('[logincommuter] response', response);
+      console.log('[logincommuter] starting login', { email });
       
-      // Store the token and user data with guards
-      try {
-        if (response?.token) {
-          await AsyncStorage.setItem('token', response.token);
-        }
-      } catch (e) {
-        console.error('[logincommuter] token set failed', e);
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        Alert.alert('Storage Error', 'Failed to store token. ' + errorMessage);
-      }
-      try {
-        if (response?.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(response.user));
-        }
-      } catch (e) {
-        console.error('[logincommuter] user set failed', e);
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        Alert.alert('Storage Error', 'Failed to store user data. ' + errorMessage);
-      }
+      // Use the AuthContext login which handles token and user persistence
+      await login(email, password);
       
-      // Debug marker
-      Alert.alert('Debug', 'Login succeeded. Navigating...');
+      // Verify user data is loaded in context
+      const storedUser = await AsyncStorage.getItem('user');
+      const userData = storedUser ? JSON.parse(storedUser) : null;
+      
+      console.log('[logincommuter] login successful', { role: userData?.role });
+      
       // Navigate based on user role
-      if (response.user?.role === 'commuter') {
-        try {
-          router.replace('/(commuter)/dashboardcommuter');
-        } catch (e) {
-          console.error('[logincommuter] navigation failed', e);
-          Alert.alert('Navigation Error', String(e));
-        }
+      if (userData?.role === 'commuter') {
+        console.log('[logincommuter] navigating to commuter dashboard');
+        router.replace('/(commuter)/dashboardcommuter');
       } else {
+        console.error('[logincommuter] user role not commuter:', userData?.role);
         Alert.alert('Error', 'This login is for commuters only');
       }
     } catch (error) {
       console.error('[logincommuter] login failed', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to login. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Alert.alert('Login Error', errorMessage || 'Failed to login. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '../lib/AuthContext';
 import { SocketProvider } from '../lib/socket-context';
 import { NotificationsProvider } from '../lib/notifications-context';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../lib/api';
@@ -78,37 +79,39 @@ function RootLayout() {
   }, []);
 
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <NotificationsProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: {
-                  backgroundColor: '#0B4619',
-                },
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(commuter)" />
-              <Stack.Screen name="(driver)" />
-              <Stack.Screen name="locationcommuter" />
-              <Stack.Screen name="otpcommuter" />
-              <Stack.Screen name="otprider" />
-              <Stack.Screen name="waitingcommuter" />
-              <Stack.Screen name="forgot-password" />
-              <Stack.Screen name="PaymentWebView" />
-              <Stack.Screen name="TopUpScreen" />
-            </Stack>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-        </NotificationsProvider>
-      </SocketProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SocketProvider>
+          <NotificationsProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <SafeAreaProvider>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: {
+                      backgroundColor: '#0B4619',
+                    },
+                  }}
+                >
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(commuter)" />
+                  <Stack.Screen name="(driver)" />
+                  <Stack.Screen name="locationcommuter" />
+                  <Stack.Screen name="otpcommuter" />
+                  <Stack.Screen name="otprider" />
+                  <Stack.Screen name="waitingcommuter" />
+                  <Stack.Screen name="forgot-password" />
+                  <Stack.Screen name="PaymentWebView" />
+                  <Stack.Screen name="TopUpScreen" />
+                </Stack>
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </NotificationsProvider>
+        </SocketProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

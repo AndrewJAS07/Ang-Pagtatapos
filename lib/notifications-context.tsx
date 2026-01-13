@@ -56,6 +56,42 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [socket, user?._id])
 
+  // If realtime is not working, poll ride state as a fallback and produce simple notifications
+  useEffect(() => {
+    if (socket) return
+    let pollInterval: NodeJS.Timeout | null = null
+    let prevRides: any[] = []
+    const loadInitial = async () => {
+      try {
+        prevRides = await (await import('./api')).rideAPI.getMyRides()
+      } catch {}
+    }
+    loadInitial().catch(() => {})
+    const poll = async () => {
+      try {
+        const { rideAPI } = await import('./api')
+        const rides = await rideAPI.getMyRides()
+        // detect new rides or status changes and add a lightweight notification
+        for (const r of rides) {
+          const prev = prevRides.find(p => p._id === r._id)
+          if (!prev) {
+            const next = await addNotification(user?._id, { title: 'Ride created', body: `Your ride ${r._id} was created`, category: 'updates' })
+            setItems(next)
+            prevRides.unshift(r)
+          } else if (prev.status !== r.status) {
+            const next = await addNotification(user?._id, { title: 'Ride update', body: `Ride ${r._id} status: ${r.status}`, category: 'updates' })
+            setItems(next)
+            prevRides = prevRides.map(p => (p._id === r._id ? r : p))
+          }
+        }
+      } catch {}
+    }
+    pollInterval = setInterval(poll, 5000)
+    return () => {
+      if (pollInterval) clearInterval(pollInterval)
+    }
+  }, [socket, user?._id])
+
   const unreadCount = useMemo(() => getUnreadCount(items), [items])
 
   const addFn = async (n: { title: string; body: string; category: NotificationCategory; id?: string; timestamp?: number }) => {

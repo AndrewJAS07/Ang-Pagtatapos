@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useSocket } from '../../lib/socket-context';
+import { useAuth } from '../../lib/AuthContext';
 import { userAPI } from '../../lib/api';
 
 interface Location {
@@ -15,6 +16,7 @@ interface Location {
 
 export default function DashboardCommuter() {
   const router = useRouter();
+  const { user } = useAuth();
   const { socket, isConnected } = useSocket();
   const mapRef = useRef<MapView>(null);
   const [currentLocation, setCurrentLocation] = useState<Location>({
@@ -32,6 +34,15 @@ export default function DashboardCommuter() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const [activeDrivers, setActiveDrivers] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!user) {
+      console.warn('[dashboardcommuter] user not authenticated, redirecting to login');
+      router.replace('/logincommuter');
+    }
+  }, [user]);
 
   const startPulseAnimation = () => {
     Animated.loop(
@@ -53,6 +64,7 @@ export default function DashboardCommuter() {
   const getCurrentLocation = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
@@ -104,51 +116,94 @@ export default function DashboardCommuter() {
 
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert('Error', 'Failed to get your current location. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to get your current location';
+      setError(errorMsg);
+      Alert.alert('Error', errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     getCurrentLocation();
     startPulseAnimation();
 
-    // Initial load of active drivers
-    (async () => {
+    // Initial load of active drivers - with better error handling
+    const loadNearbyDrivers = async () => {
       try {
+        console.log('[dashboardcommuter] loading nearby drivers', { currentLocation });
         const drivers = await userAPI.getNearbyDrivers(currentLocation.latitude, currentLocation.longitude, 20000);
-        setActiveDrivers(drivers);
-      } catch (err) {}
-    })();
+        if (mounted) {
+          setActiveDrivers(drivers || []);
+          console.log('[dashboardcommuter] loaded drivers', { count: drivers?.length || 0 });
+        }
+      } catch (err) {
+        console.error('[dashboardcommuter] failed to load nearby drivers', err);
+        if (mounted) {
+          setError(`Failed to load drivers: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    };
+
+    loadNearbyDrivers();
 
     // Socket updates for driver locations
     if (socket) {
-      socket.on('driverLocationChanged', (payload: any) => {
-        const { driverId, location, status } = payload;
-        setActiveDrivers((prev) => {
-          const idx = prev.findIndex((d: any) => d._id === driverId);
-          if (idx >= 0) {
-            const updated = [...prev];
-            updated[idx] = {
-              ...updated[idx],
-              location: { type: 'Point', coordinates: [location.longitude, location.latitude] },
-              isAvailable: status !== 'on-trip'
-            };
-            return updated;
+      const handleDriverLocationChanged = (payload: any) => {
+        if (!mounted) return;
+        try {
+          const { driverId, location, status } = payload;
+          setActiveDrivers((prev) => {
+            const idx = prev.findIndex((d: any) => d._id === driverId);
+            if (idx >= 0) {
+              const updated = [...prev];
+              updated[idx] = {
+                ...updated[idx],
+                location: { type: 'Point', coordinates: [location.longitude, location.latitude] },
+                isAvailable: status !== 'on-trip'
+              };
+              return updated;
+            }
+            return prev;
+          });
+        } catch (err) {
+          console.error('[dashboardcommuter] error handling driver location change', err);
+        }
+      };
+      socket.on('driverLocationChanged', handleDriverLocationChanged);
+      return () => {
+        socket.off('driverLocationChanged', handleDriverLocationChanged);
+      };
+    }
+
+    // Fallback polling to refresh nearby drivers when realtime is unavailable
+    let fallbackInterval: NodeJS.Timeout | null = null
+    if (!socket) {
+      const pollNearby = async () => {
+        if (!mounted) return;
+        try {
+          const drivers = await userAPI.getNearbyDrivers(currentLocation.latitude, currentLocation.longitude, 20000);
+          if (mounted) {
+            setActiveDrivers(drivers || []);
           }
-          return prev;
-        });
-      });
+        } catch (err) {
+          console.error('[dashboardcommuter] polling error', err);
+        }
+      }
+      pollNearby().catch(() => {})
+      fallbackInterval = setInterval(pollNearby, 5000)
     }
 
     return () => {
+      mounted = false;
       if (locationSubscription.current) {
         locationSubscription.current.remove();
       }
-      if (socket) socket.off('driverLocationChanged');
+      if (fallbackInterval) clearInterval(fallbackInterval);
     };
-  }, []);
+  }, [socket]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -159,7 +159,7 @@ export default function ForgotPasswordScreen() {
       </View>
       <Text style={styles.title}>Forgot</Text>
       <Text style={styles.titleSecondLine}>Password?</Text>
-      <Text style={styles.subtitle}>No worries, we'll send you{'\n'}reset instructions</Text>
+      <Text style={styles.subtitle}>{"No worries, we\u2019ll send you\nreset instructions"}</Text>
       <View style={styles.formWrapper}>
         <View style={styles.formContainer}>
           {renderStep()}

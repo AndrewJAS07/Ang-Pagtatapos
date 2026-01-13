@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
 
-export default function dashboardRider() {
+export default function DashboardRider() {
   const router = useRouter();
   const [region, setRegion] = useState({
     latitude: 13.6195,  // Naga City coordinates

@@ -921,7 +921,7 @@ const handleChooseDestination = async () => {
             </View>
             <Text style={styles.modalTitle}>Waiting for Rider</Text>
             <Text style={styles.modalSubtitle}>
-              We're finding the best rider for your trip...
+              {"We\u2019re finding the best rider for your trip..."}
             </Text>
             <ActivityIndicator size="large" color="#FFD700" style={styles.modalSpinner} />
             <Text style={styles.modalRideId}>Ride ID: {rideId}</Text>

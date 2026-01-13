@@ -2,11 +2,12 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, Acti
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { useState } from 'react';
-import { authAPI } from '../lib/api';
+import { useAuth } from '../lib/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginRiderScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,44 +20,29 @@ export default function LoginRiderScreen() {
 
     setIsLoading(true);
     try {
-      console.log('[loginrider] start', { email });
-      const response = await authAPI.login(email, password);
-      console.log('[loginrider] response', response);
+      console.log('[loginrider] starting login', { email });
       
-      // Store the token and user data with guards
-      try {
-        if (response?.token) {
-          await AsyncStorage.setItem('token', response.token);
-        }
-      } catch (e) {
-        console.error('[loginrider] token set failed', e);
-        Alert.alert('Storage Error', 'Failed to store token. ' + (e instanceof Error ? e.message : String(e)));
-      }
-      try {
-        if (response?.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(response.user));
-        }
-      } catch (e) {
-        console.error('[loginrider] user set failed', e);
-        Alert.alert('Storage Error', 'Failed to store user data. ' + (e instanceof Error ? e.message : String(e)));
-      }
+      // Use the AuthContext login which handles token and user persistence
+      await login(email, password);
       
-      // Debug marker
-      Alert.alert('Debug', 'Login succeeded. Navigating...');
+      // Verify user data is loaded in context
+      const storedUser = await AsyncStorage.getItem('user');
+      const userData = storedUser ? JSON.parse(storedUser) : null;
+      
+      console.log('[loginrider] login successful', { role: userData?.role });
+      
       // Navigate based on user role
-      if (response.user?.role === 'driver') {
-        try {
-          router.replace('/(driver)/dashboardrider');
-        } catch (e) {
-          console.error('[loginrider] navigation failed', e);
-          Alert.alert('Navigation Error', String(e));
-        }
+      if (userData?.role === 'driver') {
+        console.log('[loginrider] navigating to driver dashboard');
+        router.replace('/(driver)/dashboardrider');
       } else {
+        console.error('[loginrider] user role not driver:', userData?.role);
         Alert.alert('Error', 'This login is for drivers only');
       }
     } catch (error) {
       console.error('[loginrider] login failed', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to login. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Alert.alert('Login Error', errorMessage || 'Failed to login. Please try again.');
     } finally {
       setIsLoading(false);
     }

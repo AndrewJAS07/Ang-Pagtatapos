@@ -39,6 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authAPI.login(email, password);
       setUser(data.user);
+      // Ensure token and user are persisted to AsyncStorage
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+      }
+      if (data.user) {
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      }
     } catch (error) {
       throw error;
     }
@@ -48,6 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authAPI.register(userData);
       setUser(data.user);
+      // Ensure token and user are persisted to AsyncStorage
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+      }
+      if (data.user) {
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      }
     } catch (error) {
       throw error;
     }
@@ -63,9 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const updateUser = (userData: any) => {
-    setUser((prev) => {
+    setUser((prev: any) => {
       const next = { ...(prev || {}), ...(userData || {}) };
-      AsyncStorage.setItem('user', JSON.stringify(next));
+      // Persist updated user, log any persistence errors
+      AsyncStorage.setItem('user', JSON.stringify(next)).catch((err) => {
+        console.error('Failed to persist user to AsyncStorage:', err);
+      });
       return next;
     });
   };

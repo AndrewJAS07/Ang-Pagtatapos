@@ -60,6 +60,34 @@ export default function ChatPanel({ rideId, conversationId, userRole }: ChatPane
     })()
   }, [rideId])
 
+  // Fallback polling for messages when realtime socket is not available
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout | null = null
+    const room = conversationId || rideId
+    if (!socket) {
+      const poll = async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/messaging/history?rideId=${encodeURIComponent(rideId)}`)
+          const data = await res.json()
+          const arr = Array.isArray(data?.messages) ? data.messages : []
+          setMessages(prev => {
+            // append only messages that are new by _id
+            const existingIds = new Set(prev.map(m => m._id))
+            const newOnes = arr.filter((m: any) => !existingIds.has(m._id))
+            if (newOnes.length === 0) return prev
+            return [...prev, ...newOnes]
+          })
+        } catch {}
+      }
+      // initial poll and interval
+      poll().catch(() => {})
+      pollInterval = setInterval(poll, 3000)
+    }
+    return () => {
+      if (pollInterval) clearInterval(pollInterval)
+    }
+  }, [socket, rideId, conversationId])
+
   const sendMessage = async () => {
     const text = input.trim()
     if (!text) return

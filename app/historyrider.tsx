@@ -22,7 +22,7 @@ export default function HistoryRider() {
       <ScrollView style={styles.content}>
         <Text style={styles.title}>Recent Rides</Text>
         <View style={styles.noRidesContainer}>
-          <Text style={styles.noRidesText}>You didn't take a ride yet!</Text>
+          <Text style={styles.noRidesText}>{"You didn\u2019t take a ride yet!"}</Text>
         </View>
       </ScrollView>
 

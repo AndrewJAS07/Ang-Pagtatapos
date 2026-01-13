@@ -21,17 +21,22 @@ jest.mock('../lib/notifications-context', () => {
 
 describe('NotificationBell', () => {
   it('renders badge when unreadCount > 0', () => {
-    const tree = renderer.create(<NotificationBell />).root
+    let inst: any
+    act(() => { inst = renderer.create(<NotificationBell />) })
+    const tree = inst.root
     const badgeText = tree.findAllByProps({ accessibilityLabel: '1 unread' })
     expect(badgeText.length).toBeGreaterThan(0)
+    inst.unmount()
   })
 
   it('opens modal on press', () => {
-    const inst = renderer.create(<NotificationBell />)
+    let inst: any
+    act(() => { inst = renderer.create(<NotificationBell />) })
     const root = inst.root
     const press = root.findAllByProps({ accessibilityLabel: 'Notifications' })[0]
     act(() => { press.props.onPress() })
     const modals = root.findAllByType(require('react-native').Modal)
     expect(modals[0].props.visible).toBe(true)
+    inst.unmount()
   })
 })

@@ -98,9 +98,7 @@ export default function LoginScreen() {
             style={styles.signupLink}
             onPress={() => router.push('/signup')}
           >
-            <Text style={styles.signupLinkText}>
-              Don't have an account? Sign up
-            </Text>
+            <Text style={styles.signupLinkText}>{"Don\u2019t have an account? Sign up"}</Text>
           </TouchableOpacity>
         )}
       </View>

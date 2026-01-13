@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, ScrollView } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNotifications } from '../lib/notifications-context'
+import { useSocket } from '../lib/socket-context'
 
 function CategoryBadge({ category }: { category: 'urgent' | 'informational' | 'updates' }) {
   const cfg = useMemo(() => {
@@ -18,6 +19,7 @@ function CategoryBadge({ category }: { category: 'urgent' | 'informational' | 'u
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications()
+  const { isConnected } = useSocket()
   const [open, setOpen] = useState(false)
   const toggle = () => setOpen(v => !v)
 
@@ -32,6 +34,9 @@ export default function NotificationBell() {
         style={styles.bell}
       >
         <Ionicons name="notifications-outline" size={24} color="#FFD700" />
+        {!isConnected && (
+          <View style={styles.offlineDot} accessibilityLabel="Realtime offline" />
+        )}
         {unreadCount > 0 && (
           <View style={styles.badge} accessibilityRole="text" accessibilityLabel={`${unreadCount} unread`}>
             <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -94,4 +99,5 @@ const styles = StyleSheet.create({
   catBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   catBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   itemTime: { fontSize: 12, color: '#6B7280' },
+  offlineDot: { position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: 8, backgroundColor: '#FF6B35' },
 })
