@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "eyytrike",
-    "owner": "Hypoxic",
     "splash": {
       "resizeMode": "contain",
       "image": "./assets/images/EyytrikeLogo2.png",

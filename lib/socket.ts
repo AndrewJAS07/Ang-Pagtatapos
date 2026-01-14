@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 import Constants from 'expo-constants';
 
 // Get the server URL from environment variables or use a default
-const SOCKET_URL = Constants.expoConfig?.extra?.serverUrl || 'https://eyyback.vercel.app';
+const SOCKET_URL = Constants.expoConfig?.extra?.serverUrl || 'https://eyyback.onrender.com';
 
 // Create socket instance with configuration
 const socket = io(SOCKET_URL, {

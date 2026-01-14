@@ -1,7 +1,7 @@
 const { io } = require('socket.io-client');
 const https = require('https');
 
-const URL = process.env.SOCKET_TEST_URL || 'https://eyyback.vercel.app';
+const URL = process.env.SOCKET_TEST_URL || 'https://eyyback.onrender.com';
 
 function runTest(name, opts) {
   return new Promise((resolve) => {
