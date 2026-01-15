@@ -3,11 +3,11 @@ import Constants from 'expo-constants';
 // Environment configuration
 export const config = {
   // API Configuration
-  API_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://eyyback.onrender.com',
-  API_BASE_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_BASE_URL || 'https://eyyback.onrender.com',
+  API_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://eyyback-1.onrender.com',
+  API_BASE_URL: (Constants as any).expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_BASE_URL || 'https://eyyback-1.onrender.com',
 
   // Socket.IO Configuration
-  SOCKET_URL: (Constants as any).expoConfig?.extra?.socketUrl || process.env.EXPO_PUBLIC_SOCKET_URL || 'https://eyyback.onrender.com',
+  SOCKET_URL: (Constants as any).expoConfig?.extra?.socketUrl || process.env.EXPO_PUBLIC_SOCKET_URL || 'https://eyyback-1.onrender.com',
   
   // Google Maps Configuration
   // Do not hardcode keys in client; use env or expo extras
@@ -17,7 +17,7 @@ export const config = {
   
   // Fallback URLs for different network configurations
   FALLBACK_URLS: [
-    'https://eyyback.onrender.com',
+    'https://eyyback-1.onrender.com',
     // Keep localhost as a development fallback if needed
     'http://127.0.0.1:3000'
   ],
@@ -28,12 +28,12 @@ export const config = {
 
 // Get API URL with fallback
 export const getApiUrl = (): string => {
-  return config.API_URL || Constants.expoConfig?.extra?.serverUrl || 'https://eyyback.onrender.com';
+  return config.API_URL || Constants.expoConfig?.extra?.serverUrl || 'https://eyyback-1.onrender.com';
 };
 
 // Get Socket URL with fallback
 export const getSocketUrl = (): string => {
-  return config.SOCKET_URL || Constants.expoConfig?.extra?.serverUrl || 'https://eyyback.onrender.com';
+  return config.SOCKET_URL || Constants.expoConfig?.extra?.serverUrl || 'https://eyyback-1.onrender.com';
 };
 
 // Get Google Maps API Key

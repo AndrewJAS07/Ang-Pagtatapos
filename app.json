@@ -64,14 +64,14 @@
       "expo-web-browser"
     ],
     "extra": {
-      "serverUrl": "https://eyyback.onrender.com",
-      "apiUrl": "https://eyyback.onrender.com/api",
-      "socketUrl": "https://eyyback.onrender.com",
+      "serverUrl": "https://eyyback-1.onrender.com",
+      "apiUrl": "https://eyyback-1.onrender.com/api",
+      "socketUrl": "https://eyyback-1.onrender.com",
       "googleMapsApiKey": "AIzaSyCv62Aspv5ayOJuzYl4MqhQxjy_ddqb2oc",
       "fallbackUrls": [
-        "https://eyyback.onrender.com",
+        "https://eyyback-1.onrender.com",
         "http://127.0.0.1:3000",
-        "https://eyyback.onrender.com",
+        "https://eyyback-1.onrender.com",
         "http://127.0.0.1:3000"
       ],
       "mongodbUri": "mongodb://localhost:27017/eyytrike",

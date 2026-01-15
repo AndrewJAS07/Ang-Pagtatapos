@@ -10,13 +10,13 @@ const expo = appJson.expo || {};
  * Environment variables (EAS-safe)
  */
 const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'https://eyyback.onrender.com/api';
+  process.env.EXPO_PUBLIC_API_URL || 'https://eyyback-1.onrender.com/api';
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://eyyback.onrender.com';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://eyyback-1.onrender.com';
 
 const SOCKET_URL =
-  process.env.EXPO_PUBLIC_SOCKET_URL || 'https://eyyback.onrender.com';
+  process.env.EXPO_PUBLIC_SOCKET_URL || 'https://eyyback-1.onrender.com';
 
 const GOOGLE_MAPS_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_API_KEY ||

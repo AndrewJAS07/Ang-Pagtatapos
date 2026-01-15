@@ -22,9 +22,9 @@
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
         "NODE_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://eyyback.onrender.com/api",
-        "EXPO_PUBLIC_API_BASE_URL": "https://eyyback.onrender.com",
-        "EXPO_PUBLIC_SOCKET_URL": "https://eyyback.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://eyyback-1.onrender.com/api",
+        "EXPO_PUBLIC_API_BASE_URL": "https://eyyback-1.onrender.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://eyyback-1.onrender.com",
         "EXPO_PUBLIC_GOOGLE_API_KEY": "AIzaSyCv62Aspv5ayOJuzYl4MqhQxjy_ddqb2oc"
       }
     }
