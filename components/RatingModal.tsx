@@ -109,19 +109,14 @@ export default function RatingModal({
             <View style={{ width: 28 }} />
           </View>
 
-          {/* Content Wrapper */}
+          {/* Scrollable Content */}
           <View style={{ flex: 1, minHeight: 0 }}>
-            <ScrollView 
-              style={styles.scrollContent} 
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 20 }}
-              nestedScrollEnabled={true}
-            >
             {/* Driver Name */}
             <Text style={styles.driverName}>How was your ride with {driverName}?</Text>
 
             {/* Rating Section */}
-            <View style={styles.ratingSection}>
+            <View style={[styles.ratingSection, { backgroundColor: '#fff3e0' }]}>
+              <Text style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>Select a rating:</Text>
               <StarRating
                 value={rating}
                 onChange={setRating}
@@ -164,7 +159,6 @@ export default function RatingModal({
                 Your feedback helps drivers improve their service and helps other passengers make informed choices.
               </Text>
             </View>
-            </ScrollView>
           </View>
 
           {/* Action Buttons */}
@@ -206,11 +200,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 30,
-    maxHeight: '95%',
+    paddingBottom: 0,
     flex: 1,
-    display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'flex-start',
   },
   header: {
     flexDirection: 'row',
@@ -225,19 +218,26 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
+    paddingBottom: 10,
   },
   driverName: {
     fontSize: 16,
+    fontWeight: '500',
     color: '#666',
     marginBottom: 24,
+    marginTop: 12,
     textAlign: 'center',
+    minHeight: 24,
   },
   ratingSection: {
     alignItems: 'center',
     marginBottom: 32,
-    paddingVertical: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
+    minHeight: 120,
+    justifyContent: 'center',
   },
   ratingText: {
     marginTop: 12,
@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
   },
   feedbackSection: {
     marginBottom: 24,
+    minHeight: 200,
   },
   feedbackLabel: {
     fontSize: 16,
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     backgroundColor: '#fafafa',
-    minHeight: 100,
+    minHeight: 140,
   },
   charCountContainer: {
     marginTop: 8,
