@@ -21,6 +21,7 @@ interface UserProfile {
   role: 'driver';
   licenseNumber?: string;
   isAvailable?: boolean;
+  rating?: number;
 }
 
 export default function ProfileRider() {
@@ -72,19 +73,20 @@ export default function ProfileRider() {
         totalRides: rides.length,
       });
 
-      // Fetch available balance for withdrawal (from wallet if exists)
+      // Fetch available balance for withdrawal (from wallet)
       try {
         const walletResponse = await walletAPI.getWallet();
         const wallet = walletResponse?.data || walletResponse;
-        if (wallet && (wallet.amount !== undefined || wallet.balance !== undefined)) {
-          setAvailableBalance(wallet.amount || wallet.balance || 0);
-        } else {
-          // If no wallet, use total earnings as available balance
-          setAvailableBalance(totalEarnings);
-        }
+        
+        const walletBalance = wallet?.amount || wallet?.balance || 0;
+        // ALWAYS use at least total earnings if available
+        const finalBalance = Math.max(walletBalance, totalEarnings);
+        
+        setAvailableBalance(finalBalance);
+        console.log('Balance:', { walletBalance, totalEarnings, finalBalance });
       } catch (walletErr: any) {
-        // If wallet doesn't exist, use total earnings
-        console.log('Wallet not found, using total earnings:', walletErr);
+        // If wallet API fails, use total earnings as fallback
+        console.log('Wallet fetch error, using total earnings:', walletErr?.message);
         setAvailableBalance(totalEarnings);
       }
 
@@ -279,6 +281,31 @@ export default function ProfileRider() {
                   </Text>
                 </View>
               </View>
+              
+              {/* Driver Rating */}
+              {userProfile?.rating !== undefined && userProfile?.rating !== null && (
+                <View style={styles.ratingContainer}>
+                  <View style={styles.ratingContent}>
+                    <Text style={styles.ratingLabel}>Driver Rating</Text>
+                    <View style={styles.ratingStarsContainer}>
+                      <Text style={styles.ratingValue}>
+                        {userProfile.rating.toFixed(1)}
+                      </Text>
+                      <View style={styles.starsGroup}>
+                        {[...Array(5)].map((_, i) => (
+                          <Ionicons
+                            key={i}
+                            name={i < Math.floor(userProfile.rating || 0) ? 'star' : 'star-outline'}
+                            size={16}
+                            color={i < Math.floor(userProfile.rating || 0) ? '#FFD700' : '#ccc'}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
+              
               {userProfile?.licenseNumber && (
                 <View style={styles.licenseInfo}>
                   <Ionicons name="card" size={16} color="#FFD700" />
@@ -600,6 +627,38 @@ const styles = StyleSheet.create({
   profilePhone: {
     fontSize: 14,
     color: '#ccc',
+  },
+  ratingContainer: {
+    backgroundColor: '#083010',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFD700',
+  },
+  ratingContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingLabel: {
+    fontSize: 14,
+    color: '#FFD700',
+    fontWeight: '600',
+  },
+  ratingStarsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ratingValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  starsGroup: {
+    flexDirection: 'row',
+    gap: 2,
   },
   licenseInfo: {
     flexDirection: 'row',

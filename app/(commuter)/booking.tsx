@@ -9,6 +9,7 @@ import { rideAPI, walletAPI } from '../../lib/api';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RouteMap } from '../../utils/RouteMap';
 import { reverseGeocode, toHumanAddress } from '../../lib/geocoding';
+import RatingModal from '../../components/RatingModal';
 // Removed: import { useSocket } from '../../lib/socket-context';
 
 interface Location extends Point {
@@ -118,6 +119,8 @@ export default function LocationCommuter() {
   const [driverInfo, setDriverInfo] = useState<any>(null);
   const [isRideCompleted, setIsRideCompleted] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
 
   // Add cache cleaning function
   const cleanCache = () => {
@@ -731,6 +734,23 @@ const handleChooseDestination = async () => {
     }
   }, [waitingForDriver, rideStatus, params.rideId]);
 
+  // Auto-show rating modal when ride is completed
+  useEffect(() => {
+    if (isRideCompleted && !showRatingModal) {
+      console.log('Ride completed, preparing to show rating modal');
+      console.log('acceptedRide:', acceptedRide);
+      console.log('driverInfo:', driverInfo);
+      
+      // Small delay to ensure UI is ready
+      const showModalTimeout = setTimeout(() => {
+        console.log('Now showing rating modal...');
+        setShowRatingModal(true);
+      }, 500);
+      
+      return () => clearTimeout(showModalTimeout);
+    }
+  }, [isRideCompleted, showRatingModal]);
+
   const checkRideStatus = async () => {
     const rideId = params.rideId;
     if (!rideId) return;
@@ -762,35 +782,29 @@ const handleChooseDestination = async () => {
           setIsRideCompleted(true);
           setAcceptedRide(currentRide);
           
-          // Enhanced driver info extraction for completion
           const driverData = extractDriverInfo(currentRide);
+          console.log('Setting driver info:', driverData);
           if (driverData) {
             setDriverInfo(driverData);
           }
           
-          // Deduct fare from wallet
-          try {
-            const rideFare = currentRide.fare || (currentLocation && destination ? calculateEstimatedFare(currentLocation, destination) : 0);
-            await deductFareFromWallet(rideFare);
-            
-            console.log('Ride completed and fare deducted:', currentRide);
+          const rideFare = currentRide.fare || 0;
+          // Use setTimeout to ensure states are updated before showing alert
+          setTimeout(() => {
             Alert.alert(
-              'Ride Completed!', 
-              `Your ride has been completed. Fare of ₱${rideFare.toFixed(2)} has been deducted from your wallet.`,
+              '✅ Ride Completed!', 
+              `Fare: ₱${rideFare.toFixed(2)}\\n\\nPlease rate your experience.`,
               [{ 
-                text: 'OK'
+                text: 'OK',
+                onPress: () => {
+                  console.log('Rating modal should show now');
+                  console.log('acceptedRide:', currentRide);
+                  console.log('driverInfo:', driverData);
+                  setShowRatingModal(true);
+                }
               }]
             );
-          } catch (error) {
-            console.error('Error deducting fare from wallet:', error);
-            Alert.alert(
-              'Ride Completed!', 
-              'Your ride has been completed. There was an issue with wallet deduction.',
-              [{ 
-                text: 'OK'
-              }]
-            );
-          }
+          }, 100);
         } else if (currentRide.status === 'cancelled') {
           setWaitingForDriver(false);
           Alert.alert(
@@ -859,24 +873,90 @@ const handleChooseDestination = async () => {
   };
 
   const handleRideCompletion = () => {
-    // Reset all booking states
-    setWaitingForDriver(false);
-    setIsRideCompleted(false);
-    setAcceptedRide(null);
-    setDriverInfo(null);
-    setRideStatus('pending');
-    setSearchText('');
-    setDestination(null);
-    setMapTappedLocation(null);
-    setRouteInfo(null);
-    setSearchError(null);
-    setFare(0);
-    setTotalDistance(0);
-    setIsBooking(false);
-    setShowMapTapHint(true);
-    
-    // Navigate back to dashboard after completion
-    router.replace('/dashboardcommuter');
+    // Show rating modal instead of immediately returning
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmit = async (rating: number, feedback: string) => {
+    if (!acceptedRide?._id && !acceptedRide?.id) {
+      Alert.alert('Error', 'Ride ID not found');
+      return;
+    }
+
+    setIsSubmittingRating(true);
+    try {
+      const rideId = acceptedRide._id || acceptedRide.id;
+      console.log('Submitting rating for ride:', rideId, { rating, feedback });
+      
+      const ratingResponse = await rideAPI.rateRide(rideId, rating, feedback);
+      console.log('Rating submission response:', ratingResponse);
+      
+      Alert.alert('Success', 'Thank you for your feedback!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset all booking states after successful rating
+            setWaitingForDriver(false);
+            setIsRideCompleted(false);
+            setAcceptedRide(null);
+            setDriverInfo(null);
+            setRideStatus('pending');
+            setSearchText('');
+            setDestination(null);
+            setMapTappedLocation(null);
+            setRouteInfo(null);
+            setSearchError(null);
+            setFare(0);
+            setTotalDistance(0);
+            setIsBooking(false);
+            setShowMapTapHint(true);
+            setShowRatingModal(false);
+            
+            // Navigate back to dashboard
+            router.replace('/dashboardcommuter');
+          }
+        }
+      ]);
+    } catch (error: any) {
+      throw error;
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+
+  const handleSkipRating = () => {
+    Alert.alert(
+      'Skip Rating?',
+      'Your feedback helps drivers improve their service. Are you sure you want to skip?',
+      [
+        { text: 'Continue Rating', onPress: () => {} },
+        {
+          text: 'Skip',
+          onPress: () => {
+            // Reset all booking states
+            setWaitingForDriver(false);
+            setIsRideCompleted(false);
+            setAcceptedRide(null);
+            setDriverInfo(null);
+            setRideStatus('pending');
+            setSearchText('');
+            setDestination(null);
+            setMapTappedLocation(null);
+            setRouteInfo(null);
+            setSearchError(null);
+            setFare(0);
+            setTotalDistance(0);
+            setIsBooking(false);
+            setShowMapTapHint(true);
+            setShowRatingModal(false);
+            
+            // Navigate back to dashboard
+            router.replace('/dashboardcommuter');
+          },
+          style: 'destructive'
+        }
+      ]
+    );
   };
 
   const extractDriverInfo = (rideData: any) => {
@@ -1188,7 +1268,7 @@ const handleChooseDestination = async () => {
                 style={styles.backToDashboardButton}
                 onPress={handleRideCompletion}
               >
-                <Text style={styles.backToDashboardButtonText}>Back to Dashboard</Text>
+                <Text style={styles.backToDashboardButtonText}>Rate Your Ride</Text>
               </TouchableOpacity>
             </ScrollView>
           ) : waitingForDriver || rideStatus === 'accepted' ? (
@@ -1236,6 +1316,25 @@ const handleChooseDestination = async () => {
                               <Ionicons name="call" size={14} color="#666" />
                               <Text style={styles.driverInfoLabel}>Phone:</Text>
                               <Text style={styles.driverInfoValue}>{driverInfo.phoneNumber}</Text>
+                            </View>
+                          )}
+                          {driverInfo.rating !== undefined && driverInfo.rating !== null && (
+                            <View style={styles.driverInfoRow}>
+                              <Ionicons name="star" size={14} color="#FFD700" />
+                              <Text style={styles.driverInfoLabel}>Rating:</Text>
+                              <View style={styles.ratingDisplay}>
+                                <Text style={styles.ratingNumber}>{parseFloat(driverInfo.rating).toFixed(1)}</Text>
+                                <View style={styles.starsDisplay}>
+                                  {[...Array(5)].map((_, i) => (
+                                    <Ionicons
+                                      key={i}
+                                      name={i < Math.floor(driverInfo.rating) ? 'star' : 'star-outline'}
+                                      size={12}
+                                      color={i < Math.floor(driverInfo.rating) ? '#FFD700' : '#ccc'}
+                                    />
+                                  ))}
+                                </View>
+                              </View>
                             </View>
                           )}
                         </View>
@@ -1372,6 +1471,23 @@ const handleChooseDestination = async () => {
           )}
         </View>
       </View>
+
+      <RatingModal
+        visible={showRatingModal}
+        rideId={acceptedRide?._id || acceptedRide?.id || ''}
+        driverName={
+          driverInfo?.firstName && driverInfo?.lastName 
+            ? `${driverInfo.firstName} ${driverInfo.lastName}`
+            : driverInfo?.fullName 
+              || driverInfo?.name 
+              || (acceptedRide?.driver?.firstName && acceptedRide?.driver?.lastName 
+                ? `${acceptedRide.driver.firstName} ${acceptedRide.driver.lastName}`
+                : 'the driver')
+        }
+        onSubmit={handleRatingSubmit}
+        onClose={handleSkipRating}
+        isLoading={isSubmittingRating}
+      />
     </SafeAreaView>
   );
 }
@@ -1851,6 +1967,22 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '600',
     flex: 1,
+  },
+  ratingDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  ratingNumber: {
+    fontSize: 14,
+    color: '#FFD700',
+    fontWeight: 'bold',
+    minWidth: 30,
+  },
+  starsDisplay: {
+    flexDirection: 'row',
+    gap: 2,
   },
   rideStatusCard: {
     backgroundColor: '#e8f5e8',

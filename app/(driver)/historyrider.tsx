@@ -289,6 +289,36 @@ export default function HistoryRider() {
                   </View>
                 )}
                 
+                {/* Passenger Rating Display */}
+                {ride.rating && (
+                  <View style={styles.ratingContainer}>
+                    <View style={styles.ratingContent}>
+                      <Text style={styles.ratingLabel}>Passenger Rating:</Text>
+                      <View style={styles.ratingStars}>
+                        {[0, 1, 2, 3, 4].map((i) => {
+                          const full = ride.rating >= i + 1;
+                          const half = !full && ride.rating >= i + 0.5;
+                          return (
+                            <View key={i} style={styles.starContainer}>
+                              <Ionicons 
+                                name="star" 
+                                size={16} 
+                                color={full || half ? '#fbbf24' : '#d1d5db'} 
+                              />
+                            </View>
+                          );
+                        })}
+                        <Text style={styles.ratingValue}>{ride.rating.toFixed(1)}</Text>
+                      </View>
+                    </View>
+                    {ride.feedback && (
+                      <View style={styles.feedbackContainer}>
+                        <Text style={styles.feedbackText}>{ride.feedback}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+                
                 {/* Card Footer */}
                 <View style={styles.rideCardFooter}>
                   <View style={styles.dateContainer}>
@@ -687,5 +717,52 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666',
     fontWeight: '500',
+  },
+  ratingContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  ratingContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ratingLabel: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '500',
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  starContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ratingValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fbbf24',
+    marginLeft: 4,
+  },
+  feedbackContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#fbbf24',
+  },
+  feedbackText: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 16,
   },
 }); 
