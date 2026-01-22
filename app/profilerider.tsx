@@ -1,10 +1,73 @@
-import React from 'react';
-import { View, StyleSheet, Text, SafeAreaView, Platform, StatusBar, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, SafeAreaView, Platform, StatusBar, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://192.168.1.100:5001/api';
 
 export default function ProfileRider() {
   const router = useRouter();
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [completedRides, setCompletedRides] = useState(0);
+  const [pendingRides, setPendingRides] = useState(0);
+  const [cancelledRides, setCancelledRides] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [driverInfo, setDriverInfo] = useState(null);
+
+  // Fetch wallet and ride data
+  const fetchDriverData = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('auth_token');
+      
+      if (!token) {
+        console.log('No token found');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch wallet data
+      try {
+        const walletResponse = await axios.get(`${API_BASE_URL}/wallet`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setWalletBalance(walletResponse.data?.balance || walletResponse.data?.amount || 0);
+      } catch (walletError) {
+        console.log('Wallet fetch error:', walletError.message);
+      }
+
+      // Fetch ride statistics
+      try {
+        const ridesResponse = await axios.get(`${API_BASE_URL}/rides/my-rides`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const rides = ridesResponse.data || [];
+        const completed = rides.filter(r => r.status === 'completed').length;
+        const pending = rides.filter(r => r.status === 'accepted').length;
+        const cancelled = rides.filter(r => r.status === 'cancelled').length;
+        
+        setCompletedRides(completed);
+        setPendingRides(pending);
+        setCancelledRides(cancelled);
+      } catch (ridesError) {
+        console.log('Rides fetch error:', ridesError.message);
+      }
+    } catch (error) {
+      console.error('Error fetching driver data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use useFocusEffect to refetch when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDriverData();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,44 +87,53 @@ export default function ProfileRider() {
 
       {/* Main Content */}
       <View style={styles.content}>
-        {/* Statistics Grid */}
-        <View style={styles.statsGrid}>
-          {/* Total Earning */}
-          <View style={styles.statsCard}>
-            <Text style={styles.statsValue}>0 Php</Text>
-            <View style={styles.statsIconContainer}>
-              <Ionicons name="wallet-outline" size={20} color="#fff" />
-            </View>
-            <Text style={styles.statsLabel}>Total{'\n'}Earning</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFD700" />
+            <Text style={styles.loadingText}>Loading your data...</Text>
           </View>
+        ) : (
+          <>
+            {/* Statistics Grid */}
+            <View style={styles.statsGrid}>
+              {/* Total Earning */}
+              <View style={styles.statsCard}>
+                <Text style={styles.statsValue}>₱{walletBalance.toFixed(2)}</Text>
+                <View style={styles.statsIconContainer}>
+                  <Ionicons name="wallet-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.statsLabel}>Total{'\n'}Earning</Text>
+              </View>
 
-          {/* Complete Ride */}
-          <View style={styles.statsCard}>
-            <Text style={styles.statsValue}>0</Text>
-            <View style={styles.statsIconContainer}>
-              <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            </View>
-            <Text style={styles.statsLabel}>Complete{'\n'}Ride</Text>
-          </View>
+              {/* Complete Ride */}
+              <View style={styles.statsCard}>
+                <Text style={styles.statsValue}>{completedRides}</Text>
+                <View style={styles.statsIconContainer}>
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.statsLabel}>Complete{'\n'}Ride</Text>
+              </View>
 
-          {/* Pending Ride */}
-          <View style={styles.statsCard}>
-            <Text style={styles.statsValue}>0</Text>
-            <View style={styles.statsIconContainer}>
-              <Ionicons name="time-outline" size={20} color="#fff" />
-            </View>
-            <Text style={styles.statsLabel}>Pending{'\n'}Ride</Text>
-          </View>
+              {/* Pending Ride */}
+              <View style={styles.statsCard}>
+                <Text style={styles.statsValue}>{pendingRides}</Text>
+                <View style={styles.statsIconContainer}>
+                  <Ionicons name="time-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.statsLabel}>Pending{'\n'}Ride</Text>
+              </View>
 
-          {/* Cancel Ride */}
-          <View style={styles.statsCard}>
-            <Text style={styles.statsValue}>0</Text>
-            <View style={styles.statsIconContainer}>
-              <Ionicons name="close-circle-outline" size={20} color="#fff" />
+              {/* Cancel Ride */}
+              <View style={styles.statsCard}>
+                <Text style={styles.statsValue}>{cancelledRides}</Text>
+                <View style={styles.statsIconContainer}>
+                  <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                </View>
+                <Text style={styles.statsLabel}>Cancel{'\n'}Ride</Text>
+              </View>
             </View>
-            <Text style={styles.statsLabel}>Cancel{'\n'}Ride</Text>
-          </View>
-        </View>
+          </>
+        )}
       </View>
 
       {/* Bottom Navigation */}
@@ -105,6 +177,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 12,
+    fontSize: 16,
   },
   statsGrid: {
     flexDirection: 'row',

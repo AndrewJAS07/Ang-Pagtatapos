@@ -56,8 +56,12 @@ export default function ProfileRider() {
       // Fetch all rides
       const rides = await rideAPI.getMyRides();
       
-      // Calculate statistics
-      const completedRides = rides.filter((ride: any) => ride.status === 'completed');
+      // Calculate statistics - only count rides where payment was successfully credited to wallet
+      const completedRides = rides.filter((ride: any) => 
+        ride.status === 'completed' && 
+        ride.paymentStatus === 'completed' && 
+        ride.paymentMethod === 'wallet'
+      );
       const pendingRides = rides.filter((ride: any) => ride.status === 'pending' || ride.status === 'accepted');
       const cancelledRides = rides.filter((ride: any) => ride.status === 'cancelled');
       

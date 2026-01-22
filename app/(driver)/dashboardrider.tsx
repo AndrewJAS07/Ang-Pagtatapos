@@ -490,8 +490,9 @@ export default function DashboardRider() {
     if (!acceptedRide) return;
     
     try {
-      await rideAPI.updateRideStatus(acceptedRide._id || acceptedRide.id || '', 'completed');
-      Alert.alert('Success', 'Ride completed!');
+      // Use the completeRide endpoint which processes wallet payment
+      await rideAPI.completeRide(acceptedRide._id || acceptedRide.id || '');
+      Alert.alert('Success', 'Ride completed! Earnings added to your wallet.');
       
       // Reset navigation state
       setAcceptedRide(null);

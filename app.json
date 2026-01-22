@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "andrewjas",
     "name": "EyyTrike",
     "slug": "EyyTrike",
     "version": "1.0.0",
@@ -78,9 +79,8 @@
       "jwtSecret": "your-super-secret-jwt-key-here",
       "router": {},
       "eas": {
-        "projectId": "a84e22fa-36e0-48f6-9bf9-b0f818245081"
+        "projectId": "6a681173-9f5e-47fa-8b3c-ea66ce66dd9e"
       }
-    },
-    "owner": "andrewkhuletz07"
+    }
   }
 }

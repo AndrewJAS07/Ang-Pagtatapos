@@ -734,6 +734,27 @@ const handleChooseDestination = async () => {
     }
   }, [waitingForDriver, rideStatus, params.rideId]);
 
+  // 💰 Continuously refresh wallet after ride completion
+  useEffect(() => {
+    if (isRideCompleted) {
+      console.log('💰 Starting wallet refresh polling after ride completion');
+      
+      // Refresh immediately
+      fetchWalletBalance();
+      
+      // Keep refreshing every 2 seconds to ensure wallet is updated
+      const walletRefreshInterval = setInterval(() => {
+        console.log('💰 Refreshing wallet balance...');
+        fetchWalletBalance();
+      }, 2000);
+      
+      return () => {
+        console.log('💰 Stopping wallet refresh polling');
+        clearInterval(walletRefreshInterval);
+      };
+    }
+  }, [isRideCompleted]);
+
   // Auto-show rating modal when ride is completed
   useEffect(() => {
     if (isRideCompleted && !showRatingModal) {
@@ -787,6 +808,10 @@ const handleChooseDestination = async () => {
           if (driverData) {
             setDriverInfo(driverData);
           }
+          
+          // 💰 CRITICAL: Refresh wallet balance after ride completion
+          console.log('🔄 Refreshing wallet balance after ride completion');
+          fetchWalletBalance();
           
           const rideFare = currentRide.fare || 0;
           // Use setTimeout to ensure states are updated before showing alert
@@ -997,27 +1022,32 @@ const handleChooseDestination = async () => {
       try {
         const walletResponse = await walletAPI.getWallet();
         wallet = walletResponse?.data || walletResponse;
+        console.log('✅ Wallet fetched successfully:', { balance: wallet?.balance, amount: wallet?.amount });
       } catch (walletErr: any) {
         // If wallet doesn't exist, try to initialize it
         if (walletErr?.response?.status === 404) {
           try {
+            console.log('🔧 Initializing wallet...');
             await walletAPI.initializeWallet();
             const walletResponse = await walletAPI.getWallet();
             wallet = walletResponse?.data || walletResponse;
+            console.log('✅ Wallet initialized successfully');
           } catch (initErr) {
             console.log('Could not initialize wallet:', initErr);
             // Fallback to getWallets
-      const wallets = await walletAPI.getWallets();
+            const wallets = await walletAPI.getWallets();
             wallet = Array.isArray(wallets) ? wallets[0] : wallets;
           }
         } else {
           // Fallback to getWallets if getWallet fails
+          console.log('⚠️ Falling back to getWallets');
           const wallets = await walletAPI.getWallets();
           wallet = Array.isArray(wallets) ? wallets[0] : wallets;
         }
       }
       
       const balance = wallet?.amount ?? wallet?.balance ?? 0;
+      console.log('💰 Final wallet balance:', balance);
       setWalletBalance(balance);
     } catch (error: any) {
       console.error('Error fetching wallet balance:', error);
