@@ -203,6 +203,16 @@ const authAPI = {
     const response = await api.post('/auth/password/reset', { resetToken, newPassword });
     return response.data;
   },
+
+  // Debug: Check user role (development only)
+  debugUserRole: async (email: string) => {
+    try {
+      const response = await api.get(`/auth/debug/user/${encodeURIComponent(email)}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to check user role');
+    }
+  },
 };
 
 // User API endpoints
