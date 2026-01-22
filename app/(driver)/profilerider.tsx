@@ -190,10 +190,14 @@ export default function ProfileRider() {
       console.error('❌ Withdrawal error:', error);
       console.error('Error response:', error.response?.data);
       
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message ||
-                          error.message || 
-                          'Failed to process withdrawal request. Please try again.';
+      const errorData = error.response?.data;
+      let errorMessage = error.message || 'Failed to process withdrawal request. Please try again.';
+      
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      }
       
       Alert.alert(
         'Withdrawal Failed',
