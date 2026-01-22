@@ -156,6 +156,13 @@ export default function ProfileRider() {
     try {
       setWithdrawing(true);
       
+      console.log('💸 Submitting withdrawal request:', {
+        amount,
+        bankCode,
+        accountNumber: accountNumber.slice(-4) + '****',
+        accountHolderName
+      });
+      
       const response = await walletAPI.cashOut({
         amount,
         bankCode,
@@ -163,6 +170,8 @@ export default function ProfileRider() {
         accountHolderName,
       });
 
+      console.log('✅ Withdrawal successful:', response);
+      
       Alert.alert(
         'Withdrawal Request Submitted',
         `Your withdrawal request of ${formatCurrency(amount)} has been submitted successfully. It will be processed within 1-3 business days.`,
@@ -178,10 +187,17 @@ export default function ProfileRider() {
         ]
       );
     } catch (error: any) {
-      console.error('Withdrawal error:', error);
+      console.error('❌ Withdrawal error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message ||
+                          error.message || 
+                          'Failed to process withdrawal request. Please try again.';
+      
       Alert.alert(
         'Withdrawal Failed',
-        error.message || 'Failed to process withdrawal request. Please try again.'
+        errorMessage
       );
     } finally {
       setWithdrawing(false);
