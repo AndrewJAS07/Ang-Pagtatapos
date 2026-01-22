@@ -398,12 +398,20 @@ export default function DashboardRider() {
         return;
       }
       
-      await rideAPI.acceptRide(rideId);
+      // Accept the ride and get updated ride data from server
+      const updatedRide = await rideAPI.acceptRide(rideId);
+      console.log('✅ Ride accepted. Updated ride data:', {
+        id: updatedRide._id || updatedRide.id,
+        status: updatedRide.status,
+        fare: updatedRide.fare,
+        paymentMethod: updatedRide.paymentMethod
+      });
       Alert.alert('Success', 'Ride accepted! Navigate to pickup location.');
       
-      // Find the accepted ride
-      const acceptedRideData = rideRequests.find(ride => (ride._id || ride.id) === rideId);
+      // Use the updated ride data from the server response
+      const acceptedRideData = updatedRide || (rideRequests.find(ride => (ride._id || ride.id) === rideId) as RideRequest);
       if (acceptedRideData) {
+        console.log('Setting accepted ride with status:', acceptedRideData.status);
         setAcceptedRide(acceptedRideData);
         setIsNavigating(true);
 
@@ -490,8 +498,15 @@ export default function DashboardRider() {
     if (!acceptedRide) return;
     
     try {
+      console.log('📍 Attempting to complete ride:', {
+        rideId: acceptedRide._id || acceptedRide.id,
+        rideStatus: acceptedRide.status,
+        fare: acceptedRide.fare
+      });
+      
       // Use the completeRide endpoint which processes wallet payment
       await rideAPI.completeRide(acceptedRide._id || acceptedRide.id || '');
+      console.log('✅ Ride completed successfully');
       Alert.alert('Success', 'Ride completed! Earnings added to your wallet.');
       
       // Reset navigation state
@@ -503,7 +518,7 @@ export default function DashboardRider() {
       // Refresh ride requests
       fetchRideRequests();
     } catch (error) {
-      console.error('Error completing ride:', error);
+      console.error('❌ Error completing ride:', error);
       Alert.alert('Error', 'Failed to complete ride. Please try again.');
     }
   };
