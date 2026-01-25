@@ -563,7 +563,7 @@ const handleWithdrawalSubmit = async () => {
               <View style={styles.infoNote}>
                 <Ionicons name="information-circle-outline" size={20} color="#FFD700" />
                 <Text style={styles.infoNoteText}>
-                  Withdrawal requests are processed within 1-3 business days. Please ensure your bank details are correct.
+                  Withdrawal requests are processed immediately using Xendit. Your bank account will be credited within 1-3 business days. Please ensure your bank details are correct.
                 </Text>
               </View>
             </ScrollView>

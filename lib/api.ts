@@ -420,6 +420,63 @@ const paymentAPI = {
 }
 ;
 
+// Messaging API
+const messagingAPI = {
+  getConversations: async (params?: { page?: number; limit?: number }) => {
+    const response = await api.get('/api/messaging/conversations', { params });
+    return response.data;
+  },
+
+  getConversationByRide: async (rideId: string) => {
+    const response = await api.get(`/api/messaging/conversation/ride/${rideId}`);
+    return response.data;
+  },
+
+  getMessages: async (conversationId: string, params?: { page?: number; limit?: number }) => {
+    const response = await api.get(`/api/messaging/conversation/${conversationId}/messages`, { params });
+    return response.data;
+  },
+
+  getMessageHistory: async (rideId: string) => {
+    try {
+      // First get the conversation by ride ID
+      const convResponse = await api.get(`/api/messaging/conversation/ride/${rideId}`);
+      if (convResponse.data?.conversation?._id) {
+        // Then get messages for that conversation
+        const messResponse = await api.get(`/api/messaging/conversation/${convResponse.data.conversation._id}/messages`);
+        return {
+          success: true,
+          messages: messResponse.data?.messages || [],
+          conversation: convResponse.data.conversation
+        };
+      }
+      return { success: true, messages: [], conversation: null };
+    } catch (err: any) {
+      // Return empty messages array if conversation doesn't exist yet
+      // The error message from interceptor will say "Conversation not found" or similar
+      const message = err.message || '';
+      if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('conversation')) {
+        return { success: true, messages: [], conversation: null };
+      }
+      throw err;
+    }
+  },
+
+  sendMessage: async (data: { rideId: string; message: string; messageType?: string; location?: any; imageUrl?: string }) => {
+    const response = await api.post('/api/messaging/send', data);
+    return response.data;
+  },
+
+  markAsRead: async (conversationId: string) => {
+    const response = await api.put(`/api/messaging/conversation/${conversationId}/read`, {});
+    return response.data;
+  },
+
+  deleteMessage: async (messageId: string) => {
+    const response = await api.delete(`/api/messaging/message/${messageId}`);
+    return response.data;
+  },
+};
 
 // Utility functions
 const apiUtils = {
@@ -499,7 +556,7 @@ const apiUtils = {
   }
 };
 
-export { authAPI, userAPI, rideAPI, walletAPI, paymentAPI, apiUtils };
+export { authAPI, userAPI, rideAPI, walletAPI, messagingAPI, paymentAPI, apiUtils };
 export type { UserData, AuthResponse, UserProfile, Address };
 
 export default api;
