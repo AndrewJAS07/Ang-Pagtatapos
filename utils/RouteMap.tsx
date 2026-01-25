@@ -80,7 +80,7 @@ function RouteMap({
       setDriverProgressIndex(0);
       setRemainingRouteCoordinates([]);
     }
-  }, [origin.latitude, origin.longitude, destination.latitude, destination.longitude, travelMode, useDijkstra, pathFinder];
+  }, [origin.latitude, origin.longitude, destination.latitude, destination.longitude, travelMode, useDijkstra, pathFinder]);
 
   const fetchDijkstraRoute = async () => {
     try {

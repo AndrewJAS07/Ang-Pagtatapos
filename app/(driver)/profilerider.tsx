@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, Text, SafeAreaView, Platform, StatusBar, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { rideAPI, userAPI, authAPI, walletAPI } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -264,19 +264,22 @@ const handleWithdrawalSubmit = async () => {
     }
   };
 
-  useEffect(() => {
-    // Check authentication on mount
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Session expired', 'Please log in again.');
-        router.replace('/loginrider');
-        return;
-      }
-      fetchDriverData();
-    };
-    checkAuth();
-  }, []);
+  // Use useFocusEffect to refresh data when screen comes into focus
+  // This ensures earnings update immediately after completing a ride
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuth = async () => {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          Alert.alert('Session expired', 'Please log in again.');
+          router.replace('/loginrider');
+          return;
+        }
+        fetchDriverData();
+      };
+      checkAuth();
+    }, [router])
+  );
 
   if (loading) {
     return (
