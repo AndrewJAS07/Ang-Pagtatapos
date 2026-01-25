@@ -18,7 +18,7 @@ interface UserProfile {
   fullName: string;
   email: string;
   phoneNumber: string;
-  role: 'driver';
+  role: 'driver' | 'commuter' | 'admin';
   licenseNumber?: string;
   isAvailable?: boolean;
   rating?: number;
@@ -69,31 +69,31 @@ export default function ProfileRider() {
         return sum + (ride.fare || 0);
       }, 0);
 
+      // Fetch available balance for withdrawal (from wallet) - this is the SOURCE OF TRUTH
+      let walletBalance = 0;
+      try {
+        const walletResponse = await walletAPI.getWallet();
+        const wallet = walletResponse?.data || walletResponse;
+        walletBalance = wallet?.amount || wallet?.balance || 0;
+        console.log('✅ Wallet balance from server:', walletBalance);
+      } catch (walletErr: any) {
+        console.log('⚠️ Wallet fetch error:', walletErr?.message);
+        // Only use totalEarnings if wallet API completely fails
+        walletBalance = totalEarnings;
+      }
+
+      // Update both stats and availableBalance with wallet as source of truth
       setStats({
-        totalEarnings,
+        totalEarnings: walletBalance, // Use wallet balance as the true total earnings
         completedRides: completedRides.length,
         pendingRides: pendingRides.length,
         cancelledRides: cancelledRides.length,
         totalRides: rides.length,
       });
-
-      // Fetch available balance for withdrawal (from wallet)
-      try {
-        const walletResponse = await walletAPI.getWallet();
-        const wallet = walletResponse?.data || walletResponse;
-        
-        const walletBalance = wallet?.amount || wallet?.balance || 0;
-        // ALWAYS use at least total earnings if available
-        const finalBalance = Math.max(walletBalance, totalEarnings);
-        
-        setAvailableBalance(finalBalance);
-        console.log('Balance:', { walletBalance, totalEarnings, finalBalance });
-      } catch (walletErr: any) {
-        // If wallet API fails, use total earnings as fallback
-        console.log('Wallet fetch error, using total earnings:', walletErr?.message);
-        setAvailableBalance(totalEarnings);
-      }
-
+      
+      setAvailableBalance(walletBalance);
+      console.log('Balance sync:', { walletBalance, availableBalance: walletBalance });
+      
     } catch (err: any) {
       if (err.message && err.message.toLowerCase().includes('authenticate')) {
         Alert.alert('Session expired', 'Please log in again.');
@@ -104,7 +104,7 @@ export default function ProfileRider() {
     } finally {
       setLoading(false);
     }
-  };
+  };  // ✅ Add closing brace and semicolon here
 
   const handleLogout = async () => {
     try {
@@ -128,85 +128,127 @@ export default function ProfileRider() {
     setShowWithdrawalModal(true);
   };
 
-  const handleWithdrawalSubmit = async () => {
-    const amount = parseFloat(withdrawalAmount);
+const handleWithdrawalSubmit = async () => {
+  const amount = parseFloat(withdrawalAmount);
+  
+  // Validation
+  if (!amount || amount <= 0) {
+    Alert.alert('Invalid Amount', 'Please enter a valid withdrawal amount.');
+    return;
+  }
+
+  if (amount > availableBalance) {
+    Alert.alert('Insufficient Balance', `You can only withdraw up to ${formatCurrency(availableBalance)}.`);
+    return;
+  }
+
+  if (!bankCode || !accountNumber || !accountHolderName) {
+    Alert.alert('Missing Information', 'Please fill in all bank details.');
+    return;
+  }
+
+  // Minimum withdrawal amount
+  if (amount < 100) {
+    Alert.alert('Minimum Amount', 'Minimum withdrawal amount is ₱100.00.');
+    return;
+  }
+
+  try {
+    setWithdrawing(true);
     
-    // Validation
-    if (!amount || amount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid withdrawal amount.');
-      return;
-    }
+    console.log('💸 Submitting withdrawal request:', {
+      amount,
+      bankCode,
+      accountNumber: accountNumber.slice(-4) + '****',
+      accountHolderName,
+      currentBalance: availableBalance
+    });
+    
+    const response = await walletAPI.cashOut({
+      amount,
+      bankCode,
+      accountNumber,
+      accountHolderName,
+    });
 
-    if (amount > availableBalance) {
-      Alert.alert('Insufficient Balance', `You can only withdraw up to ${formatCurrency(availableBalance)}.`);
-      return;
-    }
-
-    if (!bankCode || !accountNumber || !accountHolderName) {
-      Alert.alert('Missing Information', 'Please fill in all bank details.');
-      return;
-    }
-
-    // Minimum withdrawal amount
-    if (amount < 100) {
-      Alert.alert('Minimum Amount', 'Minimum withdrawal amount is ₱100.00.');
-      return;
-    }
-
-    try {
-      setWithdrawing(true);
+    console.log('✅ Withdrawal successful:', response);
+    
+    // ✅ FIX: Calculate new balance more carefully
+    let newBalance = 0;
+    
+    // Prefer server response, but validate it makes sense
+    if (response.data?.newBalance !== undefined && response.data?.newBalance !== null) {
+      const serverBalance = Math.max(0, Math.round(response.data.newBalance * 100) / 100);
+      // Sanity check: the balance should be approximately (availableBalance - amount)
+      const expectedBalance = Math.max(0, availableBalance - amount);
+      const difference = Math.abs(serverBalance - expectedBalance);
       
-      console.log('💸 Submitting withdrawal request:', {
-        amount,
-        bankCode,
-        accountNumber: accountNumber.slice(-4) + '****',
-        accountHolderName
-      });
-      
-      const response = await walletAPI.cashOut({
-        amount,
-        bankCode,
-        accountNumber,
-        accountHolderName,
-      });
-
-      console.log('✅ Withdrawal successful:', response);
-      
-      Alert.alert(
-        'Withdrawal Request Submitted',
-        `Your withdrawal request of ${formatCurrency(amount)} has been submitted successfully. It will be processed within 1-3 business days.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowWithdrawalModal(false);
-              resetWithdrawalForm();
-              fetchDriverData(); // Refresh data
-            }
-          }
-        ]
-      );
-    } catch (error: any) {
-      console.error('❌ Withdrawal error:', error);
-      console.error('Error response:', error.response?.data);
-      
-      const errorData = error.response?.data;
-      let errorMessage = error.message || 'Failed to process withdrawal request. Please try again.';
-      
-      if (errorData?.message) {
-        errorMessage = errorData.message;
-      } else if (errorData?.error) {
-        errorMessage = errorData.error;
+      // If difference is within 1 PHP (floating point tolerance), use server value
+      if (difference <= 1) {
+        newBalance = serverBalance;
+        console.log(`✅ Using server balance: ${serverBalance} (difference: ${difference})`);
+      } else {
+        // Server value seems wrong, use calculated value
+        newBalance = expectedBalance;
+        console.log(`⚠️  Server balance ${serverBalance} seems wrong (expected ~${expectedBalance}), using calculated value`);
       }
-      
-      Alert.alert(
-        'Withdrawal Failed',
-        errorMessage
-      );
-    } finally {
-      setWithdrawing(false);
+    } else {
+      // No server balance provided, calculate it
+      newBalance = Math.max(0, Math.round((availableBalance - amount) * 100) / 100);
+      console.log(`✅ Calculated new balance: ${newBalance}`);
     }
-  };
+    
+    // ✅ CRITICAL: Ensure balance doesn't go negative and is properly zeroed
+    if (newBalance < 0) {
+      newBalance = 0;
+      console.log(`🔧 Balance was negative, setting to 0`);
+    }
+    
+    console.log(`Final balance after withdrawal: ${newBalance} (was ${availableBalance}, withdrew ${amount})`);
+    
+    // Update state with validated balance
+    setAvailableBalance(newBalance);
+    setStats(prevStats => ({
+      ...prevStats,
+      totalEarnings: newBalance // Keep them in sync
+    }));
+    
+    Alert.alert(
+      'Cash-out Completed!',
+      `Successfully withdrawn ${formatCurrency(amount)}!\n\nYour new balance: ${formatCurrency(newBalance)}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowWithdrawalModal(false);
+            resetWithdrawalForm();
+            // Refresh data from server to ensure perfect sync
+            fetchDriverData().catch(err => console.error('Background refresh error:', err));
+          }
+        }
+      ]
+    );
+  } catch (error: any) {
+    console.error('❌ Withdrawal error:', error);
+    console.error('Error response:', error.response?.data);
+    
+    const errorData = error.response?.data;
+    let errorMessage = error.message || 'Failed to process withdrawal request. Please try again.';
+    
+    if (errorData?.message) {
+      errorMessage = errorData.message;
+    } else if (errorData?.error) {
+      errorMessage = errorData.error;
+    }
+    
+    Alert.alert(
+      'Withdrawal Failed',
+      errorMessage
+    );
+  } finally {
+    setWithdrawing(false);
+  }
+};
 
   const resetWithdrawalForm = () => {
     setWithdrawalAmount('');
@@ -950,4 +992,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-}); 
+});
