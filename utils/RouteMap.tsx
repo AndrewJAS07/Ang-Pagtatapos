@@ -66,6 +66,8 @@ function RouteMap({
   const [route, setRoute] = useState<any>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
   const [routeAlternatives, setRouteAlternatives] = useState<Array<{ coords: any[]; info: any }>>([]);
+  const [driverProgressIndex, setDriverProgressIndex] = useState<number>(0);
+  const [remainingRouteCoordinates, setRemainingRouteCoordinates] = useState<any[]>([]);
 
   useEffect(() => {
     if (origin && destination) {
@@ -75,8 +77,10 @@ function RouteMap({
         fetchGoogleRoute();
       }
       fitMapToMarkers();
+      setDriverProgressIndex(0);
+      setRemainingRouteCoordinates([]);
     }
-  }, [origin, destination, travelMode, useDijkstra, pathFinder]);
+  }, [origin.latitude, origin.longitude, destination.latitude, destination.longitude, travelMode, useDijkstra, pathFinder];
 
   const fetchDijkstraRoute = async () => {
     try {
@@ -233,6 +237,49 @@ function RouteMap({
     }
   };
 
+  // Update route progress as origin (driver location) changes
+  useEffect(() => {
+    if (routeCoordinates.length === 0) return;
+    
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+    
+    routeCoordinates.forEach((coord, idx) => {
+      const lat1 = origin.latitude;
+      const lon1 = origin.longitude;
+      const lat2 = coord.latitude;
+      const lon2 = coord.longitude;
+      
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = idx;
+      }
+    });
+    
+    if (closestIndex > driverProgressIndex) {
+      setDriverProgressIndex(closestIndex);
+      if (closestIndex < routeCoordinates.length - 1) {
+        const remaining = routeCoordinates.slice(closestIndex);
+        setRemainingRouteCoordinates(remaining);
+        console.log(`🚗 Driver progress: ${closestIndex}/${routeCoordinates.length} waypoints`);
+      } else {
+        setRemainingRouteCoordinates([routeCoordinates[routeCoordinates.length - 1]]);
+      }
+    }
+  }, [origin.latitude, origin.longitude, routeCoordinates]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -289,11 +336,27 @@ function RouteMap({
         {routeCoordinates.length > 0 && (
           <Polyline
             coordinates={routeCoordinates}
+            strokeColor="#E8F4FD"
+            strokeWidth={6}
+            geodesic={true}
+          />
+        )}
+        
+        {remainingRouteCoordinates.length > 0 ? (
+          <Polyline
+            coordinates={remainingRouteCoordinates}
             strokeColor="#007AFF"
             strokeWidth={5}
             geodesic={true}
           />
-        )}
+        ) : routeCoordinates.length > 0 ? (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor="#007AFF"
+            strokeWidth={5}
+            geodesic={true}
+          />
+        ) : null}
         {routeAlternatives.map((alt, idx) => (
           <Polyline
             key={`alt-${idx}`}

@@ -121,6 +121,7 @@ export default function LocationCommuter() {
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [driverFoundAlertShown, setDriverFoundAlertShown] = useState(false);
 
   // Add cache cleaning function
   const cleanCache = () => {
@@ -793,13 +794,18 @@ const handleChooseDestination = async () => {
             setDriverInfo(driverData);
           }
           
-          Alert.alert(
-            'Driver Found!', 
-            'A driver has accepted your ride. They are on their way to pick you up.',
-            [{ text: 'OK' }]
-          );
+          // Show driver found alert only once
+          if (!driverFoundAlertShown) {
+            setDriverFoundAlertShown(true);
+            Alert.alert(
+              'Driver Found!', 
+              'A driver has accepted your ride. They are on their way to pick you up.',
+              [{ text: 'OK' }]
+            );
+          }
         } else if (currentRide.status === 'completed') {
           setWaitingForDriver(false);
+          setDriverFoundAlertShown(false);
           setIsRideCompleted(true);
           setAcceptedRide(currentRide);
           
@@ -832,6 +838,7 @@ const handleChooseDestination = async () => {
           }, 100);
         } else if (currentRide.status === 'cancelled') {
           setWaitingForDriver(false);
+          setDriverFoundAlertShown(false);
           Alert.alert(
             'Ride Cancelled', 
             'Your ride has been cancelled.',
@@ -849,6 +856,7 @@ const handleChooseDestination = async () => {
 
   const handleCancelRide = async () => {
     setWaitingForDriver(false);
+    setDriverFoundAlertShown(false);
     const rideId = params.rideId;
     if (!rideId) {
       Alert.alert('Error', 'No ride ID found to cancel.');

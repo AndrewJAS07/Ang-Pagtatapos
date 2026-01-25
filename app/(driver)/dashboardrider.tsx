@@ -169,10 +169,15 @@ export default function DashboardRider() {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') return;
+        
+        // Use shorter intervals during navigation for better route tracking
+        const timeInterval = isNavigating ? 10000 : 30000;  // 10s when navigating, 30s when available
+        const distanceInterval = isNavigating ? 3 : 5;      // 3m when navigating, 5m when available
+        
         locationSubscription = await Location.watchPositionAsync({
           accuracy: Location.Accuracy.Balanced,
-          timeInterval: 30000,
-          distanceInterval: 5,
+          timeInterval: timeInterval,
+          distanceInterval: distanceInterval,
         }, async (loc) => {
           const newLoc = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           setCurrentLocation(newLoc);
@@ -199,7 +204,7 @@ export default function DashboardRider() {
               status: isNavigating ? 'on-trip' : 'available'
             });
           }
-        }, 30000);
+        }, timeInterval);
       } catch {}
     };
     if (isAvailable) startTracking();
@@ -493,6 +498,17 @@ export default function DashboardRider() {
       if (ttsEnabled) Speech.speak('Arrived at pickup point');
     }
   }, [currentLocation.latitude, currentLocation.longitude, acceptedRide]);
+
+  // Update route continuously during navigation to show remaining path
+  useEffect(() => {
+    if (!isNavigating || !acceptedRide || !routeCoordinates.length) return;
+    
+    // The RouteMap component will automatically update the remaining route
+    // as the origin (currentLocation) changes due to the dependency on origin in the useEffect
+    // This just ensures we're keeping the route fresh
+    const navigationStatus = routeInfo?.navigationStatus;
+    console.log(`📍 Navigation status: ${navigationStatus}, Route points: ${routeCoordinates.length}`);
+  }, [currentLocation.latitude, currentLocation.longitude, isNavigating, acceptedRide, routeCoordinates.length, routeInfo?.navigationStatus]);
 
   const completeRide = async () => {
     if (!acceptedRide) return;
