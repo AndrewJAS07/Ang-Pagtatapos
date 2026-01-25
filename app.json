@@ -27,6 +27,7 @@
       }
     },
     "android": {
+      "icon": "./assets/images/EyytrikeLogo2.png",
       "adaptiveIcon": {
         "backgroundColor": "#0B4619",
         "foregroundImage": "./assets/images/EyytrikeLogo2.png"
